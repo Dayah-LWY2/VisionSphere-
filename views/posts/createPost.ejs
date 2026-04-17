@@ -1,0 +1,59 @@
+<div class="create-post-container">
+    <h2><%= post ? 'Edit Post' : 'Create a Post' %></h2>
+
+    <form id="createPostForm" action="<%= post ? '/community/' + communityName + '/edit/' + post._id : '/posts/create' %>" method="POST" enctype="multipart/form-data">
+        <!-- Community Selection -->
+        <% if (!post) { %>
+            <select class="community-select" name="community" required>
+                <option value="">Select Community</option>
+                <% joinedCommunities.forEach(c => { %>
+                    <option value="<%= c.name %>" <%= c.name === selectedCommunity ? 'selected' : '' %>>
+                        <%= c.displayName || c.name.toUpperCase() %>
+                    </option>
+                <% }) %>
+            </select>
+        <% } else { %>
+            <input type="hidden" name="community" value="<%= communityName %>" />
+        <% } %>
+
+        <!-- Post Title -->
+        <input type="text" name="title" placeholder="Post Title" value="<%= post ? post.title : '' %>" required />
+
+        <!-- Text Formatting Toolbar -->
+        <div class="toolbar">
+            <button type="button" onclick="formatText('bold')"><b>B</b></button>
+            <button type="button" onclick="formatText('italic')"><i>I</i></button>
+            <button type="button" onclick="formatText('underline')"><u>U</u></button>
+            <button type="button" onclick="formatText('strikeThrough')"><s>S</s></button>
+        </div>
+
+        <!-- Post Content Editor -->
+        <div id="postContent" contenteditable="true" class="editor" placeholder="Write something..."><%- post ? post.body : '' %></div>
+        <input type="hidden" name="body" id="hiddenBodyInput" />
+
+        <!-- Media Upload (New Posts Only) -->
+        <% if (!post) { %>
+            <div class="media-upload">
+                <label>Upload Images, GIFs, or Videos:</label>
+                <input type="file" id="imageInput" name="media" accept="image/*,video/*" multiple />
+                <div id="previewContainer" class="preview-container"></div>
+            </div>
+        <% } %>
+
+        <!-- Poll Feature (New Posts Only) -->
+        <% if (!post) { %>
+            <div class="poll-feature">
+                <label>Create a Poll (Optional):</label>
+                <input type="text" name="pollQuestion" placeholder="Poll question (e.g., Which is your favorite anime?)" />
+                <div id="pollOptionsContainer">
+                    <input type="text" name="pollOptions[]" placeholder="Option 1" />
+                    <input type="text" name="pollOptions[]" placeholder="Option 2" />
+                </div>
+                <button type="button" id="addPollOptionBtn">Add Another Option</button>
+            </div>
+        <% } %>
+
+        <!-- Submit Button -->
+        <button type="submit" class="submit-btn"><%= post ? 'Save Changes' : 'Post' %></button>
+    </form>
+</div>

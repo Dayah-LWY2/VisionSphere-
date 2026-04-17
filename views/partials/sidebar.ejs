@@ -1,0 +1,98 @@
+<div class="sidebar">
+    <ul>
+        <li><a href="/">Home</a></li>
+
+        <li class="hide-on-large"><a href="/posts/create">Create Post</a></li>
+
+        <!-- Admin/Moderator Actions -->
+        <% if (user && (user.role === 'admin' || user.role === 'moderator')) { %>
+            <li><a href="/community/create">Create Community</a></li>
+        <% } %>
+
+        <!-- Filter Section -->
+        <% if (typeof filter !== 'undefined' || typeof query !== 'undefined' || typeof postId !== 'undefined') { %>
+            <li class="sidebar-section">
+                <strong>Filters</strong>
+                <ul>
+                    <% 
+                        let filterBaseUrl;
+                        let filterPrefix;
+                        if (typeof communityName !== 'undefined' && typeof postId !== 'undefined') {
+                            filterBaseUrl = `/community/${communityName}/post/${postId}`;
+                            filterPrefix = '?';
+                        } else if (typeof communityName !== 'undefined') {
+                            filterBaseUrl = `/community/${communityName}`;
+                            filterPrefix = '?';
+                        } else if (typeof query !== 'undefined') {
+                            filterBaseUrl = `/search?q=${encodeURIComponent(query)}`;
+                            filterPrefix = '&';
+                        } else {
+                            filterBaseUrl = '/';
+                            filterPrefix = '?';
+                        }
+                    %>
+                    <li><a href="<%= filterBaseUrl %><%= filterPrefix %>filter=latest" class="<%= filter === 'latest' ? 'active' : '' %>">Latest</a></li>
+                    <li><a href="<%= filterBaseUrl %><%= filterPrefix %>filter=popular" class="<%= filter === 'popular' ? 'active' : '' %>">Popular</a></li>
+                    <li><a href="<%= filterBaseUrl %><%= filterPrefix %>filter=unanswered" class="<%= filter === 'unanswered' ? 'active' : '' %>">Unanswered</a></li>
+                </ul>
+            </li>
+        <% } else { %>
+            <li class="sidebar-section">
+                <strong>Filters</strong>
+                <p>Filters can't be used in this page</p>
+            </li>
+        <% } %>
+
+        <!-- General Communities Section -->
+        <li class="sidebar-section">
+            <strong>General Communities</strong>
+            <ul>
+                <% if (generalCommunities && generalCommunities.length > 0) { %>
+                    <% generalCommunities.forEach(c => { %>
+                        <li>
+                            <% const url = (typeof filter !== 'undefined') ? `/community/${c.name}?filter=${filter}` : `/community/${c.name}`; %>
+                            <a href="<%= url %>" class="<% if (typeof communityName !== 'undefined' && communityName === c.name) { %>active<% } %>">
+                                <%= c.displayName || c.name.toUpperCase() %>
+                            </a>
+                        </li>
+                    <% }) %>
+                <% } else { %>
+                    <li><em>No general communities available</em></li>
+                <% } %>
+            </ul>
+        </li>
+
+        <!-- Joined Communities Section -->
+        <li class="sidebar-section">
+            <strong>Joined Communities</strong>
+            <ul>
+                <% if (joinedCommunities && joinedCommunities.length > 0) { %>
+                    <% joinedCommunities.forEach(c => { %>
+                        <li>
+                            <% const url = (typeof filter !== 'undefined') ? `/community/${c.name}?filter=${filter}` : `/community/${c.name}`; %>
+                            <a href="<%= url %>" class="<% if (typeof communityName !== 'undefined' && communityName === c.name) { %>active<% } %>">
+                                <%= c.displayName || c.name.toUpperCase() %>
+                            </a>
+                        </li>
+                    <% }) %>
+                <% } else { %>
+                    <li><em>No joined communities</em></li>
+                <% } %>
+            </ul>
+        </li>
+
+        <!-- Available Communities Section -->
+        <li class="sidebar-section">
+            <strong>Available Communities</strong>
+            <ul>
+                <% if (availableCommunities && availableCommunities.length > 0) { %>
+                    <% availableCommunities.forEach(c => { %>
+                        <li><a href="/community/<%= c.name %>"><%= c.displayName || c.name.toUpperCase() %></a></li>
+                    <% }) %>
+                <% } else { %>
+                    <li><em>No available communities</em></li>
+                <% } %>
+            </ul>
+        </li>
+    </ul>
+</div>

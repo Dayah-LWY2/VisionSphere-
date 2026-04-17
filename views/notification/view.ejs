@@ -1,0 +1,16 @@
+<div class="full-page-notification-container">
+    <h2>Notification</h2>
+
+    <% if (notifications && notifications.length > 0) { %>
+        <div class="full-page-notification-list">
+            <% notifications.forEach(n => { %>
+                <div class="full-page-notification-item <%= !n.read ? 'unread' : '' %>">
+                    <p><%= n.message %></p>
+                    <small><%= n.createdAt.toLocaleString() %></small>
+                </div>
+            <% }) %>
+        </div>
+    <% } else { %>
+        <p>You have no notifications at this time.</p>
+    <% } %>
+</div>

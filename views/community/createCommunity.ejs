@@ -1,0 +1,32 @@
+<div class="create-post-container">
+    <h2>Create a New Community</h2>
+    <form id="createCommunityForm" action="/community/create" method="POST"> 
+        <label for="name">Community Name:</label>
+        <input type="text" id="name" name="name" placeholder="e.g., dit" required />
+
+        <label for="description">Description:</label>
+        <div class="toolbar">
+            <button type="button" onclick="formatText('bold')"><b>B</b></button>
+            <button type="button" onclick="formatText('italic')"><i>I</i></button>
+            <button type="button" onclick="formatText('underline')"><u>U</u></button>
+            <button type="button" onclick="formatText('strikeThrough')"><s>S</s></button>
+        </div>
+        <div id="postContent" contenteditable="true" class="editor" placeholder="A brief description of the community..."><%- typeof description !== 'undefined' ? description : '' %></div>
+        <input type="hidden" name="description" id="hiddenBodyInput" />
+
+        <div class="checkbox-option">
+            <input type="checkbox" id="isGeneral" name="isGeneral" />
+            <label for="isGeneral">
+                General Community (Always joined by everyone)
+            </label>
+        </div>
+        
+        <div class="checkbox-option">
+            <input type="checkbox" id="isRestrictedPosting" name="isRestrictedPosting" />
+            <label for="isRestrictedPosting">
+                Restrict Posting (Only allow Mods/Admins to post)
+            </label>
+        </div>
+        <button type="submit" class="submit-btn">Create Community</button>
+    </form>
+</div>

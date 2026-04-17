@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+        <%= title || "VisionSphere Forum" %>
+    </title>
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/css/style.css?v=<%= assetVersion %>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <link rel="icon" href="/img/forum/logo.png" />
+</head>
+
+<body class="<%= themeClass %>">
+    <!-- Navigation Bar -->
+    <%- include('partials/navbar') %>
+
+        <!-- Sidebar Toggle Button -->
+        <button id="sidebar-toggle-btn">
+            <i class="fas fa-angles-right"></i>
+        </button>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <%- include('partials/sidebar') %>
+        </aside>
+
+        <!-- Main Content -->
+        <main>
+            <%- body %>
+        </main>
+
+        <!-- Modals -->
+        <%- include('auth/loginModal') %>
+        <%- include('auth/signupModal') %>
+        <%- include('auth/resetModal') %>
+        <%- include('auth/createPasswordModal') %>
+        <%- include('partials/customAlertModal') %>
+
+        <!-- Media Preview Overlay -->
+        <div id="genericMediaOverlay" class="media-overlay hidden">
+            <div class="media-preview-content"></div>
+        </div>
+
+        <!-- Scripts -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+        <script src="/js/main.js?v=<%= assetVersion %>" defer></script>
+
+        <!-- Login Modal Handler -->
+        <% if (typeof loginRequired !=='undefined' && loginRequired) { %>
+        <script>
+            function waitForToggleModals() {
+                if (typeof window.toggleModals === "function") {
+                    window.toggleModals("login");
+                } else {
+                    setTimeout(waitForToggleModals, 50);
+                }
+            }
+            document.addEventListener("DOMContentLoaded", waitForToggleModals);
+        </script>
+        <% } %>
+</body>
+
+</html>

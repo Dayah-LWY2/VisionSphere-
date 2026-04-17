@@ -1,0 +1,299 @@
+<div class="post-detail-container" id="post-<%= post._id %>">
+    <!-- Post Header -->
+    <div class="post-header">
+        <% if (post.author.fullName === '[Deleted User]') { %>
+            <img src="<%= post.author.avatar?.filename || '/img/user/profile.png' %>" class="post-avatar" />
+        <% } else { %>
+            <a href="/profile/view/<%= post.author.email %>">
+                <img src="<%= post.author.avatar?.filename || '/img/user/profile.png' %>" class="post-avatar" />
+            </a>
+        <% } %>
+
+        <div class="post-header-details">
+            <a href="/community/<%= post.community %>" class="community-link">
+                c/<%= communityDisplayName %>
+            </a>
+            <span>Posted by
+                <% if (post.author.fullName === '[Deleted User]') { %>
+                    <%= post.author.fullName %>
+                <% } else { %>
+                    <a href="/profile/view/<%= post.author.email %>">
+                        <%= post.author.fullName %>
+                        <!-- User Type Badge -->
+                        <% if (post.author.userType === 'student') { %>
+                            <img src="<%= themeClass === 'dark-mode' ? '/img/user/student-dark.png' : '/img/user/student.png' %>" alt="Student Badge" class="user-badge" />
+                        <% } else if (post.author.userType === 'staff') { %>
+                            <img src="<%= themeClass === 'dark-mode' ? '/img/user/staff-dark.png' : '/img/user/staff.png' %>" alt="Staff Badge" class="user-badge" />
+                        <% } else if (post.author.userType === 'lecturer') { %>
+                            <img src="<%= themeClass === 'dark-mode' ? '/img/user/lecturer-dark.png' : '/img/user/lecturer.png' %>" alt="Lecturer Badge" class="user-badge" />
+                        <% } %>
+                        <!-- Role Badge -->
+                        <% if (post.author.role === 'moderator') { %>
+                            <img src="<%= themeClass === 'dark-mode' ? '/img/user/moderator-dark.png' : '/img/user/moderator.png' %>" alt="Moderator Badge" class="moderator-badge" />
+                        <% } else if (post.author.role === 'admin') { %>
+                            <img src="<%= themeClass === 'dark-mode' ? '/img/user/admin-dark.png' : '/img/user/admin.png' %>" alt="Admin Badge" class="admin-badge" />
+                        <% } %>
+                    </a>
+                <% } %>
+            </span>
+        </div>
+
+        <span class="post-time" data-created-at="<%= post.createdAt %>"></span>
+
+        <!-- Post Actions Menu -->
+        <% 
+            const isAuthor = user?.email === post.author?.email;
+            const isUserAdmin = user?.role === 'admin';
+            const isUserModerator = user?.role === 'moderator';
+            const isMember = joinedCommunities?.some(c => c.name === post.community);
+            const canEdit = isAuthor && (Date.now() - new Date(post.createdAt)) < 3600000;
+            const canModAdminDelete = (isUserAdmin && post.author?.role !== 'admin') || 
+                                      (isUserModerator && isMember && post.author?.role === 'regular');
+            const showMenuDot = canEdit || isAuthor || canModAdminDelete;
+        %>
+        <% if (showMenuDot) { %>
+            <div class="post-actions-menu">
+                <img src="<%= themeClass === 'dark-mode' ? '/img/forum/menu-dot-dark.png' : '/img/forum/menu-dot.png' %>" alt="Post Menu" class="post-actions-menu-dot">
+                <div class="post-options-dropdown">
+                    <% if (canEdit) { %>
+                        <a href="/community/<%= post.community %>/edit/<%= post._id %>">Edit Post</a>
+                    <% } %>
+                    <% if (isAuthor) { %>
+                        <form action="/community/<%= post.community %>/post/<%= post._id %>/delete" method="POST" onsubmit="return confirm('Are you sure you want to delete this post?')">
+                            <button type="submit">Delete Post</button>
+                        </form>
+                    <% } else if (canModAdminDelete) { %>
+                        <form action="/community/<%= post.community %>/post/<%= post._id %>/delete" method="POST" onsubmit="return confirmModeratorDelete(this)">
+                            <input type="hidden" name="reason" />
+                            <button type="submit">Delete Post</button>
+                        </form>
+                    <% } %>
+                </div>
+            </div>
+        <% } %>
+    </div>
+
+    <!-- Post Title -->
+    <div class="post-title"><%= post.title %></div>
+
+    <!-- Post Content -->
+    <% if (post.deleted?.status) { %>
+        <div class="deleted-message">
+            <em>This post was deleted<%= post.deleted.reason ? ': ' + post.deleted.reason : '' %></em>
+        </div>
+    <% } else { %>
+        <div class="post-body"><%- post.body %></div>
+
+        <!-- Post Media -->
+        <% if (post.media && post.media.length > 0) { %>
+            <div class="post-detail-media">
+                <% post.media.forEach(file => { %>
+                    <% if (file.endsWith('.mp4')) { %>
+                        <video src="<%= file %>" controls></video>
+                    <% } else { %>
+                        <img src="<%= file %>" />
+                    <% } %>
+                <% }) %>
+            </div>
+        <% } %>
+
+        <!-- Poll Section -->
+        <% if (post.poll && post.poll.question) { %>
+            <% const hasVoted = user && post.poll.options.some(option => option.votes.includes(user.email)); %>
+            <% const totalVotes = post.poll.options.reduce((sum, option) => sum + option.votes.length, 0); %>
+            <div class="post-poll" id="post-poll-<%= post._id %>" data-community-name="<%= communityName %>">
+                <p class="poll-question"><%= post.poll.question %></p>
+                <div class="poll-options">
+                    <% post.poll.options.forEach((option, index) => { %>
+                        <% const userHasVotedForThis = user && option.votes.includes(user.email); %>
+                        <% const votePercentage = totalVotes > 0 ? ((option.votes.length / totalVotes) * 100).toFixed(0) : 0; %>
+                        <button class="poll-option-btn <%= userHasVotedForThis ? 'voted' : '' %>" data-post-id="<%= post._id %>" data-option-id="<%= index %>" style="--progress: <%= votePercentage %>%;">
+                            <span class="option-text"><%= option.text %></span>
+                            <% if (user && post.poll.options.some(option => option.votes.includes(user.email))) { %>
+                                <div class="poll-result-info">
+                                    <span class="vote-count"><%= option.votes.length %> votes</span>
+                                    <span class="vote-percentage">(<%= votePercentage %>%)</span>
+                                </div>
+                                <div class="poll-result-bar"></div>
+                            <% } %>
+                        </button>
+                    <% }) %>
+                </div>
+            </div>
+        <% } %>
+    <% } %>
+
+    <!-- Post Actions (Voting, Reactions) -->
+    <div class="post-actions">
+        <button class="vote-btn upvote <%= post.upvotes.includes(user?.email) ? 'active' : '' %>" data-id="<%= post._id %>" data-vote="up" data-community-name="<%= communityName %>">▲</button>
+        <span class="vote-count upvote-count"><%= post.upvotes.length %></span>
+        <button class="vote-btn downvote <%= post.downvotes.includes(user?.email) ? 'active' : '' %>" data-id="<%= post._id %>" data-vote="down" data-community-name="<%= communityName %>">▼</button>
+        <span class="vote-count downvote-count"><%= post.downvotes.length %></span>
+        <div class="reaction-bar">
+            <button class="open-emoji-picker" data-post-id="<%= post._id %>" data-community-name="<%= communityName %>">😊</button>
+            <div class="emoji-picker hidden" id="emoji-picker-<%= post._id %>">
+                <% const emojiTray = ['❤️', '🤣', '🙏', '👏', '😢', '😮']; %>
+                <% emojiTray.forEach(emoji => { %>
+                    <% const reacted = post.reactions?.[emoji]?.includes(user?.email); %>
+                    <button class="emoji-btn <%= reacted ? 'selected' : '' %>" data-post-id="<%= post._id %>" data-community-name="<%= communityName %>" data-emoji="<%= emoji %>"><%= emoji %></button>
+                <% }) %>
+            </div>
+        </div>
+        <button class="share-btn" data-community-name="<%= communityName %>" data-post-id="<%= post._id %>">
+            <img src="<%= themeClass === 'dark-mode' ? '/img/forum/share-dark.png' : '/img/forum/share.png' %>" alt="Share" class="nav-icon-img">
+        </button>
+    </div>
+
+    <!-- Post Reactions Summary -->
+    <% const topReactions = Object.entries(post.reactions || {}).filter(([emoji, users]) => users.length > 0).sort((a, b) => b[1].length - a[1].length).slice(0, 3); %>
+    <div class="post-reactions">
+        <% topReactions.forEach(([emoji, users]) => { %>
+            <% const userReacted = users.includes(user?.email); %>
+            <button class="reaction-emoji <%= userReacted ? 'highlight' : '' %>" data-post-id="<%= post._id %>" data-community-name="<%= post.community %>" data-emoji="<%= emoji %>">
+                <%= emoji %> <%= users.length %>
+            </button>
+        <% }) %>
+    </div>
+
+    <!-- Comment Section -->
+    <div class="comment-section">
+        <h3>Comments</h3>
+
+        <!-- Comment Form -->
+        <% if (!post.deleted?.status) { %>
+            <form action="/community/<%= communityName %>/post/<%= post._id %>/comment" method="POST" enctype="multipart/form-data" id="commentForm">
+                <textarea name="content" placeholder="Add a comment..." required></textarea>
+                <input type="file" name="media" accept="image/*,video/*" id="commentMediaInput" />
+                <div id="commentMediaPreviewContainer" class="comment-media-preview"></div>
+                <input type="hidden" name="parentId" value="">
+                <button type="submit" class="btn-join">Post</button>
+            </form>
+            <hr>
+        <% } %>
+
+        <!-- Comment List -->
+        <div class="comment-list">
+            <% function renderComments(comments, parentId = null, level = 0) { %>
+                <% comments.filter(c => String(c.parentId) === String(parentId)).forEach(comment => { %>
+                    <% if (comment.deleted?.status) { return; } %>
+                    <div class="comment-item level-<%= level %>">
+                        <!-- Comment Avatar -->
+                        <% if (comment.author.fullName === '[Deleted User]') { %>
+                            <img src="<%= comment.author.avatar?.filename || '/img/user/profile.png' %>" class="comment-avatar" />
+                        <% } else { %>
+                            <a href="/profile/view/<%= comment.author.email %>">
+                                <img src="<%= comment.author.avatar?.filename || '/img/user/profile.png' %>" class="comment-avatar" />
+                            </a>
+                        <% } %>
+
+                        <!-- Comment Body -->
+                        <div class="comment-body">
+                            <strong>
+                                <% if (comment.author.fullName === '[Deleted User]') { %>
+                                    <%= comment.author.fullName %>
+                                <% } else { %>
+                                    <a href="/profile/view/<%= comment.author.email %>">
+                                        <%= comment.author.fullName %>
+                                        <!-- Comment Author Type Badge -->
+                                        <% if (comment.author.userType === 'student') { %>
+                                            <img src="<%= themeClass === 'dark-mode' ? '/img/user/student-dark.png' : '/img/user/student.png' %>" alt="Student Badge" class="user-badge" />
+                                        <% } else if (comment.author.userType === 'staff') { %>
+                                            <img src="<%= themeClass === 'dark-mode' ? '/img/user/staff-dark.png' : '/img/user/staff.png' %>" alt="Staff Badge" class="user-badge" />
+                                        <% } else if (comment.author.userType === 'lecturer') { %>
+                                            <img src="<%= themeClass === 'dark-mode' ? '/img/user/lecturer-dark.png' : '/img/user/lecturer.png' %>" alt="Lecturer Badge" class="user-badge" />
+                                        <% } %>
+                                        <!-- Comment Author Role Badge -->
+                                        <% if (comment.author.role === 'moderator') { %>
+                                            <img src="<%= themeClass === 'dark-mode' ? '/img/user/moderator-dark.png' : '/img/user/moderator.png' %>" alt="Moderator Badge" class="moderator-badge" />
+                                        <% } else if (comment.author.role === 'admin') { %>
+                                            <img src="<%= themeClass === 'dark-mode' ? '/img/user/admin-dark.png' : '/img/user/admin.png' %>" alt="Admin Badge" class="admin-badge" />
+                                        <% } %>
+                                    </a>
+                                <% } %>
+                            </strong>
+                            <span class="comment-time" data-created-at="<%= comment.createdAt %>"></span>
+
+                            <!-- Comment Content -->
+                            <p id="commentContent-<%= comment._id %>"><%= comment.content %></p>
+
+                            <!-- Comment Edit Form -->
+                            <form id="editCommentForm-<%= comment._id %>" class="edit-comment-form hidden" method="POST" action="/community/<%= communityName %>/post/<%= post._id %>/comment/<%= comment._id %>/edit" data-comment-id="<%= comment._id %>">
+                                <textarea name="content" required><%= comment.content %></textarea>
+                                <button type="submit">Save</button>
+                                <button type="button" class="cancel-edit-btn" data-comment-id="<%= comment._id %>">Cancel</button>
+                            </form>
+
+                            <!-- Comment Media -->
+                            <% if (comment.media) { %>
+                                <div class="comment-media-preview">
+                                    <% if (comment.media.endsWith('.mp4')) { %>
+                                        <video src="<%= comment.media %>" controls></video>
+                                    <% } else { %>
+                                        <img src="<%= comment.media %>" />
+                                    <% } %>
+                                </div>
+                            <% } %>
+
+                            <!-- Comment Actions -->
+                            <div class="comment-actions">
+                                <% 
+                                    const isCommentAuthor = user?.email === comment.author.email;
+                                    const isWithinEditWindow = (Date.now() - new Date(comment.createdAt)) < 3600000;
+                                %>
+                                <% if (isCommentAuthor && isWithinEditWindow) { %>
+                                    <button class="edit-comment-btn" data-comment-id="<%= comment._id %>">Edit</button>
+                                <% } %>
+                                
+                                <% if (user) { %>
+                                    <button class="vote-btn upvote-comment <%= comment.upvotes.includes(user?.email) ? 'active' : '' %>" data-post-id="<%= post._id %>" data-comment-id="<%= comment._id %>" data-community-name="<%= communityName %>" data-vote="up">▲</button>
+                                    <span class="vote-count upvote-count-comment"><%= comment.upvotes.length %></span>
+                                    <button class="vote-btn downvote-comment <%= comment.downvotes.includes(user?.email) ? 'active' : '' %>" data-post-id="<%= post._id %>" data-comment-id="<%= comment._id %>" data-community-name="<%= communityName %>" data-vote="down">▼</button>
+                                    <span class="vote-count downvote-count-comment"><%= comment.downvotes.length %></span>
+
+                                    <% if (user && level === 0) { %>
+                                        <button class="reply-btn" data-comment-id="<%= comment._id %>">Reply</button>
+                                    <% } %>
+                                <% } %>
+
+                                <!-- Delete Comment -->
+                                <% if (isCommentAuthor) { %>
+                                    <form action="/community/<%= communityName %>/post/<%= post._id %>/comment/<%= comment._id %>/delete" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this comment?');">
+                                        <button type="submit" class="delete-btn">Delete</button>
+                                    </form>
+                                <% } else if (user && (user.role === 'moderator' || user.role === 'admin')) { %>
+                                    <% 
+                                        const isUserAdmin = user.role === 'admin';
+                                        const canModAdminDeleteComment = isUserAdmin ? (comment.author.role !== 'admin') : (comment.author.role === 'regular');
+                                    %>
+                                    <% if (canModAdminDeleteComment) { %>
+                                        <form action="/community/<%= communityName %>/post/<%= post._id %>/comment/<%= comment._id %>/delete" method="POST" style="display:inline;" onsubmit="return confirmModeratorCommentDelete(this);">
+                                            <input type="hidden" name="reason" />
+                                            <button type="submit" class="delete-btn">Delete</button>
+                                        </form>
+                                    <% } %>
+                                <% } %>
+                            </div>
+
+                            <!-- Reply Form -->
+                            <% if (user && level === 0) { %>
+                                <form action="/community/<%= communityName %>/post/<%= post._id %>/comment" method="POST" class="reply-form hidden" id="replyForm-<%= comment._id %>" enctype="multipart/form-data">
+                                    <textarea name="content" placeholder="Reply..." required></textarea>
+                                    <input type="file" name="media" accept="image/*,video/*" id="replyMediaInput-<%= comment._id %>" />
+                                    <div id="replyMediaPreview-<%= comment._id %>" class="comment-media-preview"></div>
+                                    <input type="hidden" name="parentId" value="<%= comment._id %>">
+                                    <button type="submit">Reply</button>
+                                </form>
+                            <% } %>
+
+                            <!-- Nested Replies -->
+                            <% if (level < 1) { %>
+                                <% renderComments(comments, comment._id, level + 1); %>
+                            <% } %>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } %>
+            <% renderComments(post.comments) %>
+        </div>
+    </div>
+</div>

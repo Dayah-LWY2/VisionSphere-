@@ -1,0 +1,139 @@
+<div class="settings-page">
+    <h2>Community Settings</h2>
+
+    <!-- Community Banner Card -->
+    <div class="community-banner-card">
+        <div class="community-header-container">
+            <!-- Community Icon Section -->
+            <div class="community-icon-container">
+                <img src="<%= community.icon?.filename || '/img/community/icon.jpg' %>" alt="Community Icon" class="community-icon" onclick="openCommunityIconPreview()" />
+
+                <input type="file" id="communityIconInput" accept="image/*" hidden>
+
+                <!-- Community Icon Crop Modal -->
+                <div id="communityCropModal" class="community-crop-modal hidden">
+                    <div class="crop-content">
+                        <img id="communityCropPreview" src="" />
+                        <div class="community-crop-actions">
+                            <button id="saveCommunityCropBtn">Save</button>
+                            <button id="cancelCommunityCropBtn" type="button">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Community Icon Preview Overlay -->
+                <div id="communityIconPreviewOverlay" class="avatar-overlay hidden">
+                    <div class="avatar-preview-content">
+                        <img src="<%= community.icon?.filename || '/img/community/icon.jpg' %>" alt="Zoomed Community Icon" />
+
+                        <% const isMember = community.members?.includes(user?.email); %>
+                        <% if (user && (user.role === 'admin' || (user.role === 'moderator' && isMember))) { %>
+                            <div class="menu-dot" id="communityMenuDot">⋮</div>
+                            <div class="avatar-options hidden" id="communityOptions">
+                                <button onclick="document.getElementById('communityIconInput').click()">Edit</button>
+                                <form method="POST" action="/community/<%= community.name %>/icon/delete">
+                                    <button type="submit">Remove</button>
+                                </form>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Community Header Info -->
+            <div class="community-header-text">
+                <div class="community-title-row">
+                    <h2><%= community.displayName || community.name.toUpperCase() %></h2>
+                    <% if (!community.isGeneral) { %>
+                        <span class="member-count"><%= community.members?.length || 0 %> members</span>
+                    <% } %>
+                </div>
+
+                <!-- Community Action Buttons -->
+                <div class="community-buttons">
+                    <button id="editDescriptionBtn" class="edit-description-btn btn-join">Edit Description</button>
+                    <form id="deleteCommunityForm" data-community-name="<%= community.name %>" action="/community/<%= community.name %>/delete" method="POST">
+                        <button class="btn-delete-community btn-join" type="submit">Delete Community</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Community Description Section -->
+    <div class="community-description-box" id="descriptionBox">
+        <h3>Description</h3>
+
+        <!-- Text Formatting Toolbar -->
+        <div class="toolbar">
+            <button type="button" onclick="formatText('bold')"><b>B</b></button>
+            <button type="button" onclick="formatText('italic')"><i>I</i></button>
+            <button type="button" onclick="formatText('underline')"><u>U</u></button>
+            <button type="button" onclick="formatText('strikeThrough')"><s>S</s></button>
+        </div>
+
+        <!-- Editable Description -->
+        <div id="editableDescription" contenteditable="false" class="editable-description editor">
+            <%- community.description || 'No description yet.' %>
+        </div>
+
+        <!-- Description Edit Actions -->
+        <div class="description-edit-actions">
+            <button id="saveDescriptionBtn" class="save-description-btn hidden btn-join">Save</button>
+            <button id="cancelDescriptionBtn" class="cancel-description-btn hidden btn-join">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Posting Restriction Option -->
+    <div class="checkbox-option">
+        <input type="checkbox" id="isRestrictedPostingCheckbox" name="isRestrictedPosting" <%= community.isRestrictedPosting ? 'checked' : '' %> data-community-name="<%= community.name %>" />
+        <label for="isRestrictedPostingCheckbox">
+            Restrict Posting (Only allow Mods/Admins to post)
+        </label>
+    </div>
+
+    <!-- Manage Members Section -->
+    <div class="manage-members-container">
+        <h3>Manage Members</h3>
+
+        <!-- Management Header -->
+        <div class="management-header">
+            <div class="action-dropdown-container">
+                <select id="actionSelect" class="action-select">
+                    <option value="" disabled selected>Select an Action</option>
+                    <% if (community.isGeneral) { %>
+                        <option value="ban">Ban</option>
+                        <option value="unban">Unban</option>
+                    <% } else { %>
+                        <option value="remove">Remove</option>
+                        <option value="ban">Ban</option>
+                        <option value="add">Add</option>
+                        <option value="unban">Unban</option>
+                    <% } %>
+                </select>
+            </div>
+            <input type="text" id="memberSearchInput" class="member-search-input" placeholder="Search by name, email, or user ID...">
+        </div>
+
+        <!-- Members Table -->
+        <table class="member-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%;"><input type="checkbox" id="selectAllCheckbox" /></th>
+                    <th style="width: 30%;">Name</th>
+                    <th style="width: 45%;">Reason</th>
+                </tr>
+            </thead>
+            <tbody id="memberTableBody">
+                <tr>
+                    <td colspan="3" style="text-align: center;">Select an action to view members.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Management Actions -->
+        <div class="management-actions">
+            <button id="saveMembersBtn" class="save-btn hidden">Apply Action</button>
+        </div>
+    </div>
+</div>

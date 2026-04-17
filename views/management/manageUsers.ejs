@@ -1,0 +1,96 @@
+<div class="settings-page">
+    <h2>Manage Users</h2>
+
+    <!-- Management Header -->
+    <div class="user-management-header">
+        <button id="addUserBtn" class="action-btn">Add New User</button>
+        <input type="text" id="userSearchInput" class="user-search-input" placeholder="Search for users by name, email, or user ID...">
+    </div>
+
+    <!-- User Management Table -->
+    <div class="user-management-container">
+        <% if (allUsers && allUsers.length > 0) { %>
+            <table class="user-table" id="userTable">
+                <thead>
+                    <tr>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>User ID</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% allUsers.forEach(targetUser => { %>
+                        <tr id="user-<%= targetUser.email %>">
+                            <td><%= targetUser.fullName %></td>
+                            <td><%= targetUser.email %></td>
+                            <td><%= targetUser.studentId || targetUser.userId %></td>
+                            <td><span><%= targetUser.role %></span></td>
+                            <!-- User Actions -->
+                            <td class="user-actions">
+                                <% if (targetUser.role === 'admin') { %>
+                                    <!-- Admin users cannot be modified -->
+                                    <select class="role-select" disabled>
+                                        <option selected>Admin</option>
+                                    </select>
+                                <% } else if (user.role === 'moderator' && (targetUser.role === 'moderator' || user.email.toLowerCase() === targetUser.email.toLowerCase())) { %>
+                                    <!-- Moderators can only view their own role -->
+                                    <select class="role-select" disabled>
+                                        <option selected>Moderator</option>
+                                    </select>
+                                <% } else { %>
+                                    <!-- Role modification options -->
+                                    <select class="role-select" data-user-email="<%= targetUser.email %>" data-original-role="<%= targetUser.role %>">
+                                        <option value="none" selected disabled>Select</option>
+                                        <% if (targetUser.role === 'regular' && user.role === 'admin') { %>
+                                            <option value="moderator">Promote</option>
+                                        <% } %>
+                                        <% if (targetUser.role === 'moderator' && user.role === 'admin') { %>
+                                            <option value="regular">Demote</option>
+                                        <% } %>
+                                        <% if (user.email.toLowerCase() !== targetUser.email.toLowerCase() && (user.role === 'admin' || (user.role === 'moderator' && targetUser.role === 'regular'))) { %>
+                                            <option value="remove">Remove</option>
+                                        <% } %>
+                                    </select>
+                                <% } %>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        <% } else { %>
+            <p>No users found.</p>
+        <% } %>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div id="addUserModal" class="login-modal hidden">
+    <div class="login-content">
+        <h2>Add New User</h2>
+        <form id="addUserForm">
+            <input type="text" id="addFullName" name="fullName" placeholder="Full Name" required />
+            <input type="email" id="addEmail" name="email" placeholder="Email" required />
+            <input type="text" id="addId" name="id" placeholder="User ID (e.g., studentId, staffId)" required />
+
+            <!-- User Type Selection -->
+            <% if (user.role === 'moderator') { %>
+                <!-- Moderators can only add students -->
+                <select id="addUserType" name="userType" required disabled>
+                    <option value="student" selected>Student</option>
+                </select>
+            <% } else if (user.role === 'admin') { %>
+                <!-- Admins can add any user type -->
+                <select id="addUserType" name="userType" required>
+                    <option value="" disabled selected>Select User Type</option>
+                    <option value="student">Student</option>
+                    <option value="staff">Staff</option>
+                    <option value="lecturer">Lecturer</option>
+                </select>
+            <% } %>
+
+            <button type="submit" class="submit-btn">Add User</button>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,62 @@
+<nav class="navbar">
+    <!-- Logo Section -->
+    <div class="logo-area">
+        <img src="<%= themeClass === 'dark-mode' ? '/img/forum/logo2-dark.png' : '/img/forum/logo2.png' %>" alt="VisionSphere Logo" class="nav-logo">
+        <img src="<%= themeClass === 'dark-mode' ? '/img/forum/logo-dark.png' : '/img/forum/logo.png' %>" alt="VisionSphere Logo" class="nav-logo">
+    </div>
+
+    <!-- Search Bar -->
+    <form class="search-bar" action="/search" method="get">
+        <input type="text" name="q" placeholder="Search posts, communities, users..." required>
+        <button type="submit" class="icon-btn">
+            <img src="<%= themeClass === 'dark-mode' ? '/img/forum/search-dark.png' : '/img/forum/search.png' %>" alt="Search" class="nav-icon-img">
+        </button>
+    </form>
+
+    <!-- Navigation Actions -->
+    <div class="nav-actions">
+        <!-- Create Post Button -->
+        <a href="/posts/create" class="icon-btn">
+            <img src="<%= themeClass === 'dark-mode' ? '/img/forum/create-post-dark.png' : '/img/forum/create-post.png' %>" alt="Create Post" class="nav-icon-img">
+        </a>
+
+        <!-- Notification Section -->
+        <div class="notification-container hide-on-mobile">
+            <button id="notificationBtn" class="icon-btn">
+                <img src="<%= themeClass === 'dark-mode' ? '/img/forum/notification-dark.png' : '/img/forum/notification.png' %>" alt="Notification" class="nav-icon-img">
+                <% if (unreadNotificationCount > 0) { %>
+                    <span class="notification-badge"><%= unreadNotificationCount %></span>
+                <% } %>
+            </button>
+            <div id="notificationModal" class="notification-modal hidden">
+                <h4>Notifications</h4>
+                <div id="notificationList"></div>
+                <div class="notification-footer">
+                    <a href="/notification/view">View All</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Authentication Section -->
+        <% if (user) { %>
+            <!-- Authenticated User Menu -->
+            <div class="avatar-container">
+                <img src="<%= user?.avatar?.filename || '/img/user/profile.png' %>" alt="Avatar" class="navbar-avatar" />
+                <div class="avatar-dropdown" id="avatarDropdown">
+                    <a href="/notification/view" class="show-on-mobile">Notification</a>
+                    <a href="/profile/view">Profile</a>
+                    <a href="/profile/settings">Setting</a>
+                    <% if (user.role === 'admin' || user.role === 'moderator') { %>
+                        <a href="/management/manage-users">Manage Users</a>
+                    <% } %>
+                    <form method="POST" action="/logout">
+                        <button type="submit" class="logout-btn">Log Out</button>
+                    </form>
+                </div>
+            </div>
+        <% } else { %>
+            <!-- Login Button for Guests -->
+            <button id="loginBtn" class="btn-login">Log In</button>
+        <% } %>
+    </div>
+</nav>

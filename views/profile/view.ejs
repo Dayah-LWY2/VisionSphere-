@@ -1,0 +1,723 @@
+<%
+const isDarkMode = themeClass === 'dark-mode';
+const profileAvatarSrc = viewedUser?.avatar?.filename || '/img/user/profile.png';
+const profileBannerSrc = viewedUser?.banner?.filename || '/img/user/banner.jpg';
+const profileId = viewedUser.studentId || viewedUser.userId;
+const emojiTray = ['❤️', '🤣', '🙏', '👏', '😢', '😮'];
+
+function getUserTypeBadge(userType) {
+    if (userType === 'student') {
+        return {
+            src: isDarkMode ? '/img/user/student-dark.png' : '/img/user/student.png',
+            alt: 'Student Badge',
+            className: 'user-badge'
+        };
+    }
+
+    if (userType === 'staff') {
+        return {
+            src: isDarkMode ? '/img/user/staff-dark.png' : '/img/user/staff.png',
+            alt: 'Staff Badge',
+            className: 'user-badge'
+        };
+    }
+
+    if (userType === 'lecturer') {
+        return {
+            src: isDarkMode ? '/img/user/lecturer-dark.png' : '/img/user/lecturer.png',
+            alt: 'Lecturer Badge',
+            className: 'user-badge'
+        };
+    }
+
+    return null;
+}
+
+function getRoleBadge(role) {
+    if (role === 'moderator') {
+        return {
+            src: isDarkMode ? '/img/user/moderator-dark.png' : '/img/user/moderator.png',
+            alt: 'Moderator Badge',
+            className: 'moderator-badge'
+        };
+    }
+
+    if (role === 'admin') {
+        return {
+            src: isDarkMode ? '/img/user/admin-dark.png' : '/img/user/admin.png',
+            alt: 'Admin Badge',
+            className: 'admin-badge'
+        };
+    }
+
+    return null;
+}
+
+function getLevelBadge(level) {
+    if (level >= 50) {
+        return { src: '/img/user/badge-4.png', alt: 'Level 50 Badge' };
+    }
+    if (level >= 35) {
+        return { src: '/img/user/badge-3.png', alt: 'Level 35 Badge' };
+    }
+    if (level >= 20) {
+        return { src: '/img/user/badge-2.png', alt: 'Level 20 Badge' };
+    }
+    if (level >= 5) {
+        return { src: '/img/user/badge-1.png', alt: 'Level 5 Badge' };
+    }
+
+    return null;
+}
+
+function getUserBadges(targetUser) {
+    return [getUserTypeBadge(targetUser?.userType), getRoleBadge(targetUser?.role)].filter(Boolean);
+}
+
+function getDisplayAvatar(targetUser) {
+    return targetUser?.avatar?.filename || '/img/user/profile.png';
+}
+
+function isDeletedUser(targetUser) {
+    return targetUser?.fullName === '[Deleted User]';
+}
+
+function getCommunityLabel(post) {
+    return post.communityDisplayName || post.community.toUpperCase();
+}
+
+function getPostPreview(post) {
+    return post.body ? `${post.body.substring(0, 150)}...` : '';
+}
+
+function getCommentPreview(comment) {
+    return `${comment.content.substring(0, 50)}...`;
+}
+%>
+
+<div class="profile-container">
+    <div class="profile-banner-wrapper">
+        <img
+            id="profileBanner"
+            src="<%= profileBannerSrc %>"
+            alt="Banner"
+            class="profile-banner"
+            onclick="openBannerPreview()"
+        />
+    </div>
+
+    <div class="profile-avatar-wrapper">
+        <% if (isDeletedUser(viewedUser)) { %>
+            <img
+                id="profileAvatar"
+                src="<%= profileAvatarSrc %>"
+                alt="Avatar"
+                class="profile-avatar"
+            />
+        <% } else { %>
+            <img
+                id="profileAvatar"
+                src="<%= profileAvatarSrc %>"
+                alt="Avatar"
+                class="profile-avatar"
+                onclick="openAvatarPreview()"
+            />
+        <% } %>
+
+        <% if (isOwner) { %>
+            <div id="profileMenu" class="avatar-menu hidden">
+                <button onclick="document.getElementById('avatarInput').click()">Edit Profile Picture</button>
+                <button onclick="removeAvatar()">Remove Avatar</button>
+            </div>
+        <% } %>
+    </div>
+
+    <div class="profile-info">
+        <h2 class="profile-name">
+            <%= viewedUser.fullName %>
+            <% getUserBadges(viewedUser).forEach((badge) => { %>
+                <img src="<%= badge.src %>" alt="<%= badge.alt %>" class="<%= badge.className %>" />
+            <% }) %>
+        </h2>
+        <h3 class="profile-id"><%= profileId %></h3>
+    </div>
+
+    <input type="file" id="avatarInput" accept="image/*" hidden />
+
+    <div id="cropModal" class="crop-modal hidden">
+        <div class="crop-content">
+            <img id="cropPreview" src="" alt="Avatar crop preview" />
+            <div class="crop-actions">
+                <button id="saveCropBtn">Save Avatar</button>
+                <button id="cancelCropBtn" type="button">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="bannerInput" accept="image/*" hidden />
+
+    <div id="bannerCropModal" class="crop-modal hidden">
+        <div class="crop-content">
+            <img id="bannerCropPreview" src="" alt="Banner crop preview" />
+            <div class="crop-actions">
+                <button id="saveBannerCropBtn">Save Banner</button>
+                <button id="cancelBannerCropBtn" type="button">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="avatarPreviewOverlay" class="avatar-overlay hidden">
+        <div class="avatar-preview-content">
+            <img id="zoomedAvatar" src="<%= profileAvatarSrc %>" alt="Zoomed Avatar" />
+            <% if (isOwner) { %>
+                <div class="menu-dot" id="menuDot">⋮</div>
+                <div class="avatar-options hidden" id="avatarOptions">
+                    <button onclick="document.getElementById('avatarInput').click()">Edit Profile Picture</button>
+                    <button onclick="removeAvatar()">Remove Profile Picture</button>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <div id="bannerPreviewOverlay" class="avatar-overlay hidden">
+        <div class="avatar-preview-content">
+            <img id="zoomedBanner" src="<%= profileBannerSrc %>" alt="Zoomed Banner" />
+            <% if (isOwner) { %>
+                <div class="menu-dot" id="bannerMenuDot">⋮</div>
+                <div class="avatar-options hidden" id="bannerOptions">
+                    <button onclick="document.getElementById('bannerInput').click()">Edit Profile Banner</button>
+                    <button onclick="removeBanner()">Remove Profile Banner</button>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <div class="achievement-box">
+        <h3>Achievements</h3>
+        <div class="karma-row">Karma: <span id="karmaBadge"><%= karma %></span></div>
+
+        <div class="level-row">
+            Level: <span><%= viewedUser.level %></span>
+            <% const levelBadge = getLevelBadge(viewedUser.level); %>
+            <% if (levelBadge) { %>
+                <img src="<%= levelBadge.src %>" alt="<%= levelBadge.alt %>" class="achievement-badge" />
+            <% } %>
+        </div>
+
+        <div class="exp-row">
+            <span>EXP: <%= viewedUser.points %> / <%= nextLevelThreshold %></span>
+            <div
+                class="exp-bar-container"
+                style="--progress: <%= (expProgressPercentage && Number.isFinite(expProgressPercentage)) ? expProgressPercentage : 0 %>%;"
+            >
+                <div class="exp-bar-progress"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="joined-communities-box">
+        <h3>Joined Communities</h3>
+        <% if (viewedUserJoinedCommunities.length > 0) { %>
+            <div class="joined-community">
+                <% viewedUserJoinedCommunities.forEach((community) => { %>
+                    <a href="/community/<%= community.name %>" class="community-card">
+                        <img
+                            src="<%= community.icon?.filename || '/img/community/icon.jpg' %>"
+                            alt="<%= community.name %> Icon"
+                            class="community-icon"
+                        />
+                        <div class="community-info">
+                            <h3><%= community.displayName || community.name.toUpperCase() %></h3>
+                        </div>
+                    </a>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <p>The user hasn't joined any communities yet.</p>
+        <% } %>
+    </div>
+
+    <div class="user-activity">
+        <div class="tab-container">
+            <button class="tab-btn active" data-target="posts-content">Posts</button>
+            <button class="tab-btn" data-target="comments-content">Comments</button>
+        </div>
+
+        <div id="posts-content" class="tab-content active">
+            <% if (userPosts.length > 0) { %>
+                <% userPosts.forEach((post) => { %>
+                    <%
+                    const isAuthor = user?.email === post.author?.email;
+                    const isUserAdmin = user?.role === 'admin';
+                    const isUserModerator = user?.role === 'moderator';
+                    const isMember = viewedUserJoinedCommunities?.some((community) => community.name === post.community);
+                    const canEdit = isAuthor && (Date.now() - new Date(post.createdAt)) < 3600000;
+                    const canModAdminDelete =
+                        (isUserAdmin && post.author?.role !== 'admin') ||
+                        (isUserModerator && isMember && post.author?.role === 'regular');
+                    const showMenuDot = canEdit || isAuthor || canModAdminDelete;
+                    const topReactions = Object.entries(post.reactions || {})
+                        .filter(([, users]) => users.length > 0)
+                        .sort((a, b) => b[1].length - a[1].length)
+                        .slice(0, 3);
+                    const hasVoted = user && post.poll?.options?.some((option) => option.votes.includes(user.email));
+                    const totalVotes = post.poll?.options?.reduce((sum, option) => sum + option.votes.length, 0) || 0;
+                    const firstComment = post.comments?.[0];
+                    %>
+
+                    <div class="community-post" id="post-<%= post._id %>">
+                        <div class="post-header">
+                            <% if (isDeletedUser(post.author)) { %>
+                                <img src="<%= getDisplayAvatar(post.author) %>" alt="Author Avatar" class="post-avatar" />
+                            <% } else { %>
+                                <a href="/profile/view/<%= post.author.email %>">
+                                    <img src="<%= getDisplayAvatar(post.author) %>" alt="Author Avatar" class="post-avatar" />
+                                </a>
+                            <% } %>
+
+                            <div class="post-header-details">
+                                <a href="/community/<%= post.community %>" class="community-link">
+                                    c/<%= getCommunityLabel(post) %>
+                                </a>
+                                <span>
+                                    Posted by
+                                    <% if (isDeletedUser(post.author)) { %>
+                                        <%= post.author.fullName %>
+                                    <% } else { %>
+                                        <a href="/profile/view/<%= post.author.email %>">
+                                            <%= post.author.fullName %>
+                                            <% getUserBadges(post.author).forEach((badge) => { %>
+                                                <img src="<%= badge.src %>" alt="<%= badge.alt %>" class="<%= badge.className %>" />
+                                            <% }) %>
+                                        </a>
+                                    <% } %>
+                                </span>
+                            </div>
+
+                            <span class="post-time" data-created-at="<%= post.createdAt %>"></span>
+
+                            <% if (showMenuDot) { %>
+                                <div class="post-actions-menu">
+                                    <img
+                                        src="<%= isDarkMode ? '/img/forum/menu-dot-dark.png' : '/img/forum/menu-dot.png' %>"
+                                        alt="Post Menu"
+                                        class="post-actions-menu-dot"
+                                    />
+                                    <div class="post-options-dropdown">
+                                        <% if (canEdit) { %>
+                                            <a href="/community/<%= post.community %>/edit/<%= post._id %>">Edit Post</a>
+                                        <% } %>
+
+                                        <% if (isAuthor) { %>
+                                            <form
+                                                action="/community/<%= post.community %>/post/<%= post._id %>/delete"
+                                                method="POST"
+                                                onsubmit="return confirm('Are you sure you want to delete this post?')"
+                                            >
+                                                <button type="submit">Delete Post</button>
+                                            </form>
+                                        <% } else if (canModAdminDelete) { %>
+                                            <form
+                                                action="/community/<%= post.community %>/post/<%= post._id %>/delete"
+                                                method="POST"
+                                                onsubmit="return confirmModeratorDelete(this)"
+                                            >
+                                                <input type="hidden" name="reason" />
+                                                <button type="submit">Delete Post</button>
+                                            </form>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            <% } %>
+                        </div>
+
+                        <a href="/community/<%= post.community %>/post/<%= post._id %>" class="post-preview-link">
+                            <div class="post-title"><%= post.title %></div>
+
+                            <% if (post.body) { %>
+                                <div class="post-body-preview"><%- getPostPreview(post) %></div>
+                            <% } %>
+
+                            <% if (post.media && post.media.length > 0) { %>
+                                <div class="post-media">
+                                    <% post.media.forEach((file) => { %>
+                                        <% if (file.endsWith('.mp4')) { %>
+                                            <video src="<%= file %>" controls></video>
+                                        <% } else { %>
+                                            <img src="<%= file %>" alt="Post Media" />
+                                        <% } %>
+                                    <% }) %>
+                                </div>
+                            <% } %>
+                        </a>
+
+                        <% if (post.poll && post.poll.question) { %>
+                            <div class="post-poll" id="post-poll-<%= post._id %>" data-community-name="<%= post.community %>">
+                                <p class="poll-question"><%= post.poll.question %></p>
+                                <div class="poll-options">
+                                    <% post.poll.options.forEach((option, index) => { %>
+                                        <% const userHasVotedForThis = hasVoted && option.votes.includes(user.email); %>
+                                        <% const votePercentage = totalVotes > 0 ? ((option.votes.length / totalVotes) * 100).toFixed(0) : 0; %>
+                                        <button
+                                            class="poll-option-btn <%= userHasVotedForThis ? 'voted' : '' %>"
+                                            data-post-id="<%= post._id %>"
+                                            data-option-id="<%= index %>"
+                                            style="--progress: <%= votePercentage %>%;"
+                                        >
+                                            <span class="option-text"><%= option.text %></span>
+                                            <% if (hasVoted) { %>
+                                                <div class="poll-result-info">
+                                                    <span class="vote-count"><%= option.votes.length %> votes</span>
+                                                    <span class="vote-percentage">(<%= votePercentage %>%)</span>
+                                                </div>
+                                                <div class="poll-result-bar"></div>
+                                            <% } %>
+                                        </button>
+                                    <% }) %>
+                                </div>
+                            </div>
+                        <% } %>
+
+                        <div class="post-actions">
+                            <button
+                                class="vote-btn upvote <%= post.upvotes.includes(user?.email) ? 'active' : '' %>"
+                                data-id="<%= post._id %>"
+                                data-vote="up"
+                                data-community-name="<%= post.community %>"
+                            >
+                                ▲
+                            </button>
+                            <span class="vote-count upvote-count"><%= post.upvotes.length %></span>
+                            <button
+                                class="vote-btn downvote <%= post.downvotes.includes(user?.email) ? 'active' : '' %>"
+                                data-id="<%= post._id %>"
+                                data-vote="down"
+                                data-community-name="<%= post.community %>"
+                            >
+                                ▼
+                            </button>
+                            <span class="vote-count downvote-count"><%= post.downvotes.length %></span>
+
+                            <div class="reaction-bar">
+                                <button
+                                    class="open-emoji-picker"
+                                    data-post-id="<%= post._id %>"
+                                    data-community-name="<%= post.community %>"
+                                >
+                                    😊
+                                </button>
+                                <div class="emoji-picker hidden" id="emoji-picker-<%= post._id %>">
+                                    <% emojiTray.forEach((emoji) => { %>
+                                        <% const reacted = post.reactions?.[emoji]?.includes(user?.email); %>
+                                        <button
+                                            class="emoji-btn <%= reacted ? 'selected' : '' %>"
+                                            data-post-id="<%= post._id %>"
+                                            data-community-name="<%= post.community %>"
+                                            data-emoji="<%= emoji %>"
+                                        >
+                                            <%= emoji %>
+                                        </button>
+                                    <% }) %>
+                                </div>
+                            </div>
+
+                            <button class="share-btn" data-community-name="<%= post.community %>" data-post-id="<%= post._id %>">
+                                <img
+                                    src="<%= isDarkMode ? '/img/forum/share-dark.png' : '/img/forum/share.png' %>"
+                                    alt="Share"
+                                    class="nav-icon-img"
+                                />
+                            </button>
+                        </div>
+
+                        <div class="post-reactions">
+                            <% topReactions.forEach(([emoji, users]) => { %>
+                                <% const userReacted = users.includes(user?.email); %>
+                                <button
+                                    class="reaction-emoji <%= userReacted ? 'highlight' : '' %>"
+                                    data-post-id="<%= post._id %>"
+                                    data-community-name="<%= post.community %>"
+                                    data-emoji="<%= emoji %>"
+                                >
+                                    <%= emoji %> <%= users.length %>
+                                </button>
+                            <% }) %>
+                        </div>
+
+                        <% if (firstComment) { %>
+                            <a href="/community/<%= post.community %>/post/<%= post._id %>" class="post-preview-link">
+                                <div class="top-comment">
+                                    <img
+                                        src="<%= isDarkMode ? '/img/forum/comment-dark.png' : '/img/forum/comment.png' %>"
+                                        alt="Comment"
+                                        class="comment-icon-preview"
+                                    />
+                                    <div class="top-comment-content">
+                                        <span class="comment-author">
+                                            <% if (isDeletedUser(firstComment.author)) { %>
+                                                <%= firstComment.author.fullName %>
+                                            <% } else { %>
+                                                <%= firstComment.author.fullName %>
+                                                <% getUserBadges(firstComment.author).forEach((badge) => { %>
+                                                    <img src="<%= badge.src %>" alt="<%= badge.alt %>" class="<%= badge.className %>" />
+                                                <% }) %>
+                                            <% } %>
+                                        </span>
+                                        :
+                                        <span class="comment-text"><%= getCommentPreview(firstComment) %></span>
+                                    </div>
+                                </div>
+                            </a>
+                        <% } %>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <p>No posts yet.</p>
+            <% } %>
+        </div>
+
+        <div id="comments-content" class="tab-content hidden">
+            <% if (commentedPosts.length > 0) { %>
+                <% commentedPosts.forEach((post) => { %>
+                    <%
+                    const isAuthor = user?.email === post.author?.email;
+                    const isUserAdmin = user?.role === 'admin';
+                    const isUserModerator = user?.role === 'moderator';
+                    const isMember = viewedUserJoinedCommunities?.some((community) => community.name === post.community);
+                    const canEdit = isAuthor && (Date.now() - new Date(post.createdAt)) < 3600000;
+                    const canModAdminDelete =
+                        (isUserAdmin && post.author?.role !== 'admin') ||
+                        (isUserModerator && isMember && post.author?.role === 'regular');
+                    const showMenuDot = canEdit || isAuthor || canModAdminDelete;
+                    const topReactions = Object.entries(post.reactions || {})
+                        .filter(([, users]) => users.length > 0)
+                        .sort((a, b) => b[1].length - a[1].length)
+                        .slice(0, 3);
+                    const hasVoted = user && post.poll?.options?.some((option) => option.votes.includes(user.email));
+                    const totalVotes = post.poll?.options?.reduce((sum, option) => sum + option.votes.length, 0) || 0;
+                    const userComment = post.comments.find((comment) => comment.author.email === viewedUser.email && !comment.deleted?.status);
+                    const firstComment = post.comments?.[0];
+                    %>
+
+                    <div class="community-post" id="post-<%= post._id %>">
+                        <div class="post-header">
+                            <% if (isDeletedUser(post.author)) { %>
+                                <img src="<%= getDisplayAvatar(post.author) %>" alt="Author Avatar" class="post-avatar" />
+                            <% } else { %>
+                                <a href="/profile/view/<%= post.author.email %>">
+                                    <img src="<%= getDisplayAvatar(post.author) %>" alt="Author Avatar" class="post-avatar" />
+                                </a>
+                            <% } %>
+
+                            <div class="post-header-details">
+                                <a href="/community/<%= post.community %>" class="community-link">
+                                    c/<%= getCommunityLabel(post) %>
+                                </a>
+                                <span>
+                                    Posted by
+                                    <% if (isDeletedUser(post.author)) { %>
+                                        <%= post.author.fullName %>
+                                    <% } else { %>
+                                        <a href="/profile/view/<%= post.author.email %>">
+                                            <%= post.author.fullName %>
+                                            <% getUserBadges(post.author).forEach((badge) => { %>
+                                                <img src="<%= badge.src %>" alt="<%= badge.alt %>" class="<%= badge.className %>" />
+                                            <% }) %>
+                                        </a>
+                                    <% } %>
+                                </span>
+                            </div>
+
+                            <span class="post-time" data-created-at="<%= post.createdAt %>"></span>
+
+                            <% if (showMenuDot) { %>
+                                <div class="post-actions-menu">
+                                    <img
+                                        src="<%= isDarkMode ? '/img/forum/menu-dot-dark.png' : '/img/forum/menu-dot.png' %>"
+                                        alt="Post Menu"
+                                        class="post-actions-menu-dot"
+                                    />
+                                    <div class="post-options-dropdown">
+                                        <% if (canEdit) { %>
+                                            <a href="/community/<%= post.community %>/edit/<%= post._id %>">Edit Post</a>
+                                        <% } %>
+
+                                        <% if (isAuthor) { %>
+                                            <form
+                                                action="/community/<%= post.community %>/post/<%= post._id %>/delete"
+                                                method="POST"
+                                                onsubmit="return confirm('Are you sure you want to delete this post?')"
+                                            >
+                                                <button type="submit">Delete Post</button>
+                                            </form>
+                                        <% } else if (canModAdminDelete) { %>
+                                            <form
+                                                action="/community/<%= post.community %>/post/<%= post._id %>/delete"
+                                                method="POST"
+                                                onsubmit="return confirmModeratorDelete(this)"
+                                            >
+                                                <input type="hidden" name="reason" />
+                                                <button type="submit">Delete Post</button>
+                                            </form>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            <% } %>
+                        </div>
+
+                        <a href="/community/<%= post.community %>/post/<%= post._id %>" class="post-preview-link">
+                            <div class="post-title"><%= post.title %></div>
+
+                            <% if (post.body) { %>
+                                <div class="post-body-preview"><%- getPostPreview(post) %></div>
+                            <% } %>
+
+                            <% if (post.media && post.media.length > 0) { %>
+                                <div class="post-media">
+                                    <% post.media.forEach((file) => { %>
+                                        <% if (file.endsWith('.mp4')) { %>
+                                            <video src="<%= file %>" controls></video>
+                                        <% } else { %>
+                                            <img src="<%= file %>" alt="Post Media" />
+                                        <% } %>
+                                    <% }) %>
+                                </div>
+                            <% } %>
+
+                            <% if (post.poll && post.poll.question) { %>
+                                <div class="post-poll" id="post-poll-<%= post._id %>" data-community-name="<%= post.community %>">
+                                    <p class="poll-question"><%= post.poll.question %></p>
+                                    <div class="poll-options">
+                                        <% post.poll.options.forEach((option, index) => { %>
+                                            <% const userHasVotedForThis = hasVoted && option.votes.includes(user.email); %>
+                                            <% const votePercentage = totalVotes > 0 ? ((option.votes.length / totalVotes) * 100).toFixed(0) : 0; %>
+                                            <button
+                                                class="poll-option-btn <%= userHasVotedForThis ? 'voted' : '' %>"
+                                                data-post-id="<%= post._id %>"
+                                                data-option-id="<%= index %>"
+                                                style="--progress: <%= votePercentage %>%;"
+                                            >
+                                                <span class="option-text"><%= option.text %></span>
+                                                <% if (hasVoted) { %>
+                                                    <div class="poll-result-info">
+                                                        <span class="vote-count"><%= option.votes.length %> votes</span>
+                                                        <span class="vote-percentage">(<%= votePercentage %>%)</span>
+                                                    </div>
+                                                    <div class="poll-result-bar"></div>
+                                                <% } %>
+                                            </button>
+                                        <% }) %>
+                                    </div>
+                                </div>
+                            <% } %>
+
+                            <div class="post-actions">
+                                <button
+                                    class="vote-btn upvote <%= post.upvotes.includes(user?.email) ? 'active' : '' %>"
+                                    data-id="<%= post._id %>"
+                                    data-vote="up"
+                                    data-community-name="<%= post.community %>"
+                                >
+                                    ▲
+                                </button>
+                                <span class="vote-count upvote-count"><%= post.upvotes.length %></span>
+                                <button
+                                    class="vote-btn downvote <%= post.downvotes.includes(user?.email) ? 'active' : '' %>"
+                                    data-id="<%= post._id %>"
+                                    data-vote="down"
+                                    data-community-name="<%= post.community %>"
+                                >
+                                    ▼
+                                </button>
+                                <span class="vote-count downvote-count"><%= post.downvotes.length %></span>
+
+                                <button class="share-btn" data-community-name="<%= post.community %>" data-post-id="<%= post._id %>">
+                                    <img
+                                        src="<%= isDarkMode ? '/img/forum/share-dark.png' : '/img/forum/share.png' %>"
+                                        alt="Share"
+                                        class="nav-icon-img"
+                                    />
+                                </button>
+                            </div>
+
+                            <div class="reaction-bar">
+                                <button
+                                    class="open-emoji-picker"
+                                    data-post-id="<%= post._id %>"
+                                    data-community-name="<%= post.community %>"
+                                >
+                                    😊
+                                </button>
+                                <div class="emoji-picker hidden" id="emoji-picker-<%= post._id %>">
+                                    <% emojiTray.forEach((emoji) => { %>
+                                        <% const reacted = post.reactions?.[emoji]?.includes(user?.email); %>
+                                        <button
+                                            class="emoji-btn <%= reacted ? 'selected' : '' %>"
+                                            data-post-id="<%= post._id %>"
+                                            data-community-name="<%= post.community %>"
+                                            data-emoji="<%= emoji %>"
+                                        >
+                                            <%= emoji %>
+                                        </button>
+                                    <% }) %>
+                                </div>
+                            </div>
+
+                            <div class="post-reactions">
+                                <% topReactions.forEach(([emoji, users]) => { %>
+                                    <% const userReacted = users.includes(user?.email); %>
+                                    <button
+                                        class="reaction-emoji <%= userReacted ? 'highlight' : '' %>"
+                                        data-post-id="<%= post._id %>"
+                                        data-community-name="<%= post.community %>"
+                                        data-emoji="<%= emoji %>"
+                                    >
+                                        <%= emoji %> <%= users.length %>
+                                    </button>
+                                <% }) %>
+                            </div>
+
+                            <% if (userComment) { %>
+                                <div class="top-comment">
+                                    <img
+                                        src="<%= isDarkMode ? '/img/forum/comment-dark.png' : '/img/forum/comment.png' %>"
+                                        alt="Comment"
+                                        class="comment-icon-preview"
+                                    />
+                                    <div class="top-comment-content">
+                                        <span class="comment-author"><%= viewedUser.fullName %></span>:
+                                        <span class="comment-text"><%= getCommentPreview(userComment) %></span>
+                                    </div>
+                                </div>
+                            <% } else if (firstComment) { %>
+                                <div class="top-comment">
+                                    <img
+                                        src="<%= isDarkMode ? '/img/forum/comment-dark.png' : '/img/forum/comment.png' %>"
+                                        alt="Comment"
+                                        class="comment-icon-preview"
+                                    />
+                                    <div class="top-comment-content">
+                                        <span class="comment-author">
+                                            <% if (isDeletedUser(firstComment.author)) { %>
+                                                <%= firstComment.author.fullName %>
+                                            <% } else { %>
+                                                <%= firstComment.author.fullName %>
+                                                <% getUserBadges(firstComment.author).forEach((badge) => { %>
+                                                    <img src="<%= badge.src %>" alt="<%= badge.alt %>" class="<%= badge.className %>" />
+                                                <% }) %>
+                                            <% } %>
+                                        </span>
+                                        :
+                                        <span class="comment-text"><%= getCommentPreview(firstComment) %></span>
+                                    </div>
+                                </div>
+                            <% } %>
+                        </a>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <p>No comments yet.</p>
+            <% } %>
+        </div>
+    </div>
+</div>

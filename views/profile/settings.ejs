@@ -1,0 +1,69 @@
+<div class="settings-page">
+    <h2>Account Settings</h2>
+
+    <!-- General Information Section -->
+    <h3>General</h3>
+    <div class="setting-group">
+        <label>Email:</label>
+        <span><%= user.email %></span>
+    </div>
+    <div class="setting-group">
+        <label>ID:</label>
+        <span><%= user.studentId || user.userId %></span>
+    </div>
+    <div class="setting-group">
+        <label>Full Name:</label>
+        <span><%= user.fullName %></span>
+    </div>
+
+    <hr>
+
+    <!-- Privacy & Password Section -->
+    <h3>Privacy</h3>
+    <form id="settings-form" action="/profile/settings" method="POST">
+        <div class="setting-group">
+            <label>Password:</label>
+            <span>••••••••••</span>
+        </div>
+
+        <!-- Password Edit Fields (Hidden by Default) -->
+        <div id="password-edit-fields" style="display:none;">
+            <div class="setting-group">
+                <label>Current Password:</label>
+                <input type="password" name="currentPassword">
+            </div>
+            <div class="setting-group">
+                <label>New Password:</label>
+                <input type="password" name="newPassword">
+            </div>
+            <p style="font-size: 0.8em; color: #555; text-align: left; margin-top: -1rem; margin-bottom: 1rem;">
+                Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one symbol.
+            </p>
+            <div class="setting-group">
+                <label>Confirm New Password:</label>
+                <input type="password" name="confirmPassword">
+            </div>
+        </div>
+
+        <hr>
+
+        <!-- Preferences Section -->
+        <h3>Preferences</h3>
+        <div class="setting-group">
+            <label for="theme-select">Theme:</label>
+            <select id="theme-select" name="theme" disabled>
+                <option value="default" <%= user.theme === 'default' ? 'selected' : '' %>>Default</option>
+                <option value="dark" <%= user.theme === 'dark' ? 'selected' : '' %>>Dark Mode</option>
+            </select>
+        </div>
+    </form>
+
+    <!-- Action Buttons -->
+    <div class="bottom-actions">
+        <button id="editBtn" class="action-btn">Edit</button>
+        <div id="saveCancelBtns" style="display:none;">
+            <button id="cancelBtn" class="cancel-btn">Cancel</button>
+            <button id="saveBtn" form="settings-form" type="submit" class="save-btn">Save</button>
+        </div>
+    </div>
+</div>
