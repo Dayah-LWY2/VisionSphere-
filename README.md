@@ -28,7 +28,7 @@ VisionSphere is a forum-based web application developed as a Final Year Project 
 - Prototype design and multimedia: Azlina Lee
 
 ## Access
-Access is restricted to authorized users only. For access and further information, please contact the project owner via Gmail or WhatsApp.
+This website is restricted to authorized users only. To access the platform, please contact the project owner via Gmail or WhatsApp.
 
 ## Live Demo
 https://visionsphere-b310b3771fcb.herokuapp.com/
